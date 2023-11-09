@@ -1,21 +1,27 @@
 import tweepy
-import os
-from config import api_key, api_secret_key, access_token, access_token_secret
+import requests
+import json
+from config import api_key, api_secret_key,bearer_token, access_token, access_token_secret, quote_key, api_url
 
-def api():
-    auth = tweepy.OAuthHandler(api_key, api_secret_key)
-    auth.set_access_token(access_token, access_token_secret)
 
-    return tweepy.API(auth)
+client = tweepy.Client(bearer_token,api_key, api_secret_key, access_token, access_token_secret)
+auth = tweepy.OAuth1UserHandler(api_key, api_secret_key, access_token, access_token_secret)
+api = tweepy.API(auth)
 
-def tweet(api: tweepy.API, message: str, image_path=None):
-    if image_path:
-        api.update_status_with_media(message, image_path)
-    else:
-        api.update_status(message)
 
-    print('Tweeted successfully')
+response = requests.get(api_url, headers={'X-Api-Key': quote_key})
 
-if __name__ == '__main__':
-    api = api()
-    tweet(api, 'This was tweeted from python','test.jpeg')
+if response.status_code == requests.codes.ok:
+    print(response.text)
+    data = response.json()
+    item = data[0]
+    quote = item['quote']
+    author = item['author']
+    print(quote)
+    print(author)
+    tweet_text = f'"{quote}" - {author}'
+    client.create_tweet(text = tweet_text)
+else:
+    print("Error:", response.status_code, response.text)
+
+
